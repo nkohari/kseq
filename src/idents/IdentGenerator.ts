@@ -8,17 +8,10 @@ import {Ident} from './Ident';
 export interface IdentGenerator {
   
   /**
-   * Issues a new logical timestamp, possibly incrementing the clock.
-   * @returns The current logical time.
+   * Gets the current logical timestamp.
+   * @returns The current logical timestamp.
    */
-  getTime(increment?: boolean): number
-  
-  /**
-   * Creates the two special bookend Idents that represent the beginning
-   * and end of a sequence.
-   * @returns A tuple containing the first and last bookend Idents.
-   */
-  getBookends(): [Ident, Ident]
+  getTime(): number
   
   /**
    * Creates a new Ident whose value lies somewhere between two other Idents.

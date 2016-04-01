@@ -14,13 +14,8 @@ export class Sequence<T> {
    */
   replica: string
   
-  /**
-   * The maximum depth of identifiers in the sequence.
-   */
-  maxDepth: number
-  
   private storage: Storage<T>
-  private idGenerator: IdentGenerator
+  private identGenerator: IdentGenerator
   
   /**
    * Creates an instance of Sequence<T>.
@@ -28,13 +23,10 @@ export class Sequence<T> {
    * @param options Options that customize the sequence.
    * @returns An instance of Sequence<T>.
    */
-  constructor(replica: string, storage?: Storage<T>, idGenerator?: IdentGenerator) {
+  constructor(replica: string, storage?: Storage<T>, identGenerator?: IdentGenerator) {
     this.replica = replica;
     this.storage = storage || new ArrayStorage<T>();
-    this.idGenerator = idGenerator || new LSEQIdentGenerator(replica);
-    let [first, last] = this.idGenerator.getBookends();
-    this.storage.add(first, null);
-    this.storage.add(last, null);
+    this.identGenerator = identGenerator || new LSEQIdentGenerator(replica);
   }
   
   /**
@@ -42,16 +34,20 @@ export class Sequence<T> {
    * @returns The number of items in the sequence.
    */
   size(): number {
-    return this.storage.size() - 2;
+    return this.storage.size();
   }
   
   /**
-   * Gets the depth of the sequence. (The maximum number of segments used by
-   * an atom in the sequence.)
+   * Gets the maximum depth of identifiers in the sequence.
    * @returns The depth of the sequence.
    */
   depth(): number {
-    return this.maxDepth;
+    let max = 0;
+    this.forEach((atom) => {
+      let depth = atom.id.getDepth();
+      if (max < depth) max = depth;
+    });
+    return max;
   }
   
   /**
@@ -62,14 +58,13 @@ export class Sequence<T> {
    *          to reproduce the insertion.
    */
   insert(value: T, pos: number): InsertOp {
-    let before = this.storage.get(pos);
-    let after = this.storage.get(pos + 1);
+    if (pos < 0) throw new RangeError(`The position ${pos} must be greater than or equal to zero.`);
     
-    let id = this.idGenerator.getIdent(before.id, after.id);
+    let before = this.storage.get(pos - 1);
+    let after = this.storage.get(pos);
+    let id = this.identGenerator.getIdent((before && before.id), (after && after.id));
     let op = new InsertOp(id, value);
     this.apply(op);
-    
-    if (this.maxDepth < id.getDepth()) this.maxDepth = id.getDepth();
     
     return op;
   }
@@ -91,12 +86,15 @@ export class Sequence<T> {
    *          to reproduce the removal.
    */
   remove(pos: number): RemoveOp {
+    if (pos < 0) throw new RangeError(`The position ${pos} must be greater than or equal to zero.`);
+    
     let atom = this.storage.get(pos);
     if (atom) {
       let op = new RemoveOp(atom.id)
       this.apply(op);
       return op;
     }
+    
     return null;
   }
   
@@ -107,7 +105,7 @@ export class Sequence<T> {
    *          or undefined if no such value exists. 
    */
   get(pos: number): T {
-    const atom = this.storage.get(pos + 1);
+    const atom = this.storage.get(pos);
     return atom ? atom.value : undefined;
   }
   
@@ -155,11 +153,11 @@ export class Sequence<T> {
   apply(op: Op): void {
     switch (op.kind) {
       case OpKind.Insert:
-        let insertOp = <InsertOp> op; 
+        let insertOp = <InsertOp> op;
         this.storage.add(insertOp.id, insertOp.value);
         break;
       case OpKind.Remove:
-        let removeOp = <RemoveOp> op; 
+        let removeOp = <RemoveOp> op;
         this.storage.remove(removeOp.id);
         break;
       default:

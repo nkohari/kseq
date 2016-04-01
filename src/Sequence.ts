@@ -70,7 +70,7 @@ export class Sequence<T> {
    * @returns The depth of the sequence.
    */
   depth(): number {
-    return Object.keys(this.strategies).length;
+    return this.strategies.length;
   }
   
   /**

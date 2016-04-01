@@ -36,7 +36,7 @@ export class ArrayStorage<T> implements Storage<T> {
    */
   add(id: Ident, value: T): number {
     let pos = this.bisectRight(id);
-    let existing = this.get(pos);
+    let existing = this.get(pos - 1);
     if (existing && id.compare(existing.id) == 0) {
       return -1;
     }
@@ -88,7 +88,7 @@ export class ArrayStorage<T> implements Storage<T> {
    * @inheritdoc
    */
   toArray(): Atom<T>[] {
-    return [].concat(this.atoms);
+    return this.atoms.slice(0);
   }
   
   /**

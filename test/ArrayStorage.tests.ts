@@ -2,7 +2,8 @@
 /// <reference path="../typings/main/ambient/chai/index.d.ts" />
 
 import {ArrayStorage} from '../src/ArrayStorage';
-import {Ident, Segment} from '../src/Ident';
+import {Ident} from '../src/Ident';
+import {Segment} from '../src/Segment';
 import {assert} from 'chai';
 
 describe("ArrayStorage", () => {

@@ -1,7 +1,8 @@
 /// <reference path="../typings/main/ambient/mocha/index.d.ts" />
 /// <reference path="../typings/main/ambient/chai/index.d.ts" />
 
-import {Ident, Segment} from '../src/Ident';
+import {Ident} from '../src/Ident';
+import {Segment} from '../src/Segment';
 import {assert} from 'chai';
 
 describe("Ident", () => {

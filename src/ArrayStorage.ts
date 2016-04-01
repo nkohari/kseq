@@ -2,22 +2,38 @@ import {Atom} from './Atom';
 import {Storage} from './Storage';
 import {Ident} from './Ident';
 
+/**
+ * An implementation of Storage<T> that uses a binary insertion sort over
+ * an array to track a sorted list of atoms.
+ */
 export class ArrayStorage<T> implements Storage<T> {
   
   private atoms: Atom<T>[]
   
+  /**
+   * Creates an instange of ArrayStorage<T>.
+   */
   constructor() {
     this.atoms = [];
   }
   
-  size() {
+  /**
+   * @inheritdoc
+   */
+  size(): number {
     return this.atoms.length;
   }
   
+  /**
+   * @inheritdoc
+   */
   get(pos: number): Atom<T> {
     return this.atoms[pos];
   }
   
+  /**
+   * @inheritdoc
+   */
   add(id: Ident, value: T): number {
     let pos = this.bisectRight(id);
     let existing = this.get(pos);
@@ -29,6 +45,9 @@ export class ArrayStorage<T> implements Storage<T> {
     return pos;
   }
   
+  /**
+   * @inheritdoc
+   */
   remove(id: Ident): number {
     let pos = this.indexOf(id);
     if (pos >= 0) {
@@ -38,6 +57,9 @@ export class ArrayStorage<T> implements Storage<T> {
     return -1;
   }
   
+  /**
+   * @inheritdoc
+   */
   indexOf(id: Ident): number {
     let pos = this.bisectLeft(id);
     if (pos !== this.atoms.length && this.atoms[pos].id.compare(id) == 0) {
@@ -48,18 +70,34 @@ export class ArrayStorage<T> implements Storage<T> {
     }
   }
   
+  /**
+   * @inheritdoc
+   */
   forEach(func: { (atom: Atom<T>): void }): void {
     this.atoms.forEach(func);
   }
   
+  /**
+   * @inheritdoc
+   */
   map<R>(func: { (atom: Atom<T>): R }): R[] {
     return this.atoms.map(func);
   }
   
+  /**
+   * @inheritdoc
+   */
   toArray(): Atom<T>[] {
-    return this.atoms;
+    return [].concat(this.atoms);
   }
   
+  /**
+   * A binary search that finds the leftmost position of the atom with the
+   * specified identifier (if it exists), or the position at which the atom
+   * would be (if it does not exist).
+   * @param id The desired identifier.
+   * @returns The correct position.
+   */
   private bisectLeft(id: Ident): number {
     let min = 0;
     let max = this.atoms.length;
@@ -77,6 +115,12 @@ export class ArrayStorage<T> implements Storage<T> {
     return min;
   }
   
+  /**
+   * A binary search that finds the position at which an atom with the
+   * specified identifier should be inserted.
+   * @param id The desired identifier.
+   * @returns The correct position.
+   */
   private bisectRight(id: Ident): number {
     let min = 0;
     let max = this.atoms.length;

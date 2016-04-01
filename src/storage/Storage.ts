@@ -1,5 +1,5 @@
 import {Atom} from './Atom';
-import {Ident} from './Ident';
+import {Ident} from '../idents';
 
 /**
  * A sorted set of Atom<T>s, used as backing storage by Sequence<T>.

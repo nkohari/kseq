@@ -1,4 +1,4 @@
-import {Ident} from './Ident';
+import {Ident} from './idents';
 
 /**
  * The kind of operation.

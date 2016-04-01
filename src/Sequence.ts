@@ -1,28 +1,7 @@
 import {defaults} from 'lodash';
-import {ArrayStorage} from './ArrayStorage';
-import {Atom} from './Atom';
-import {Ident} from './Ident';
+import {Ident, IdentGenerator, LSEQIdentGenerator, Segment} from './idents';
+import {Storage, ArrayStorage} from './storage';
 import {Op, OpKind, InsertOp, RemoveOp} from './Op';
-import {Options} from './Options';
-import {Segment} from './Segment';
-import {Storage} from './Storage';
-
-/**
- * The identifier allocation strategy to use at a specified depth.
- */
-enum Strategy {
-  
-  /**
-   * Generate identifiers by adding a value to the previous digit.
-   */
-  AddFromLeft = 1,
-  
-  /**
-   * Generate identifiers by subtracting a value to the next digit.
-   */
-  SubtractFromRight = 2,
-  
-}
 
 /**
  * A CmRDT sequence that implements the LSEQ algorithm to support
@@ -35,25 +14,27 @@ export class Sequence<T> {
    */
   replica: string
   
-  private options: Options<T>
+  /**
+   * The maximum depth of identifiers in the sequence.
+   */
+  maxDepth: number
+  
   private storage: Storage<T>
-  private strategies: Strategy[]
-  private time: number
+  private idGenerator: IdentGenerator
   
   /**
    * Creates an instance of Sequence<T>.
    * @param replica The unique replica id for the sequence.
    * @param options Options that customize the sequence.
-   * @returns An instance of Sequence<T>. 
+   * @returns An instance of Sequence<T>.
    */
-  constructor(replica: string, options?: Options<T>) {
+  constructor(replica: string, storage?: Storage<T>, idGenerator?: IdentGenerator) {
     this.replica = replica;
-    this.options = Options(options);
-    this.storage = this.options.storage || new ArrayStorage<T>();
-    this.strategies = [];
-    this.time = 0;
-    this.storage.add(new Ident(0, [Segment(0, this.replica)]), null);
-    this.storage.add(new Ident(0, [Segment(this.getWidthAtDepth(0), this.replica)]), null);
+    this.storage = storage || new ArrayStorage<T>();
+    this.idGenerator = idGenerator || new LSEQIdentGenerator(replica);
+    let [first, last] = this.idGenerator.getBookends();
+    this.storage.add(first, null);
+    this.storage.add(last, null);
   }
   
   /**
@@ -70,7 +51,7 @@ export class Sequence<T> {
    * @returns The depth of the sequence.
    */
   depth(): number {
-    return this.strategies.length;
+    return this.maxDepth;
   }
   
   /**
@@ -82,10 +63,14 @@ export class Sequence<T> {
    */
   insert(value: T, pos: number): InsertOp {
     let before = this.storage.get(pos);
-    let after  = this.storage.get(pos + 1);
-    let id     = this.createIdent(before.id, after.id);
-    let op     = new InsertOp(id, value);
+    let after = this.storage.get(pos + 1);
+    
+    let id = this.idGenerator.getIdent(before.id, after.id);
+    let op = new InsertOp(id, value);
     this.apply(op);
+    
+    if (this.maxDepth < id.getDepth()) this.maxDepth = id.getDepth();
+    
     return op;
   }
   
@@ -158,8 +143,6 @@ export class Sequence<T> {
   toJSON(): Object {
     return {
       r: this.replica,
-      t: this.time,
-      s: this.strategies,
       d: this.storage.map((atom) => [atom.id.toString(), atom.value])
     }
   }
@@ -183,70 +166,5 @@ export class Sequence<T> {
         throw new Error(`Unknown op kind ${op.kind}`);
     }
   }
-  
-  /**
-   * Creates a new Ident whose value lies somewhere between two other Idents.
-   * @param before The Ident that should come directly before the new Ident.
-   * @param before The Ident that should come directly after the new Ident.
-   * @returns The newly-generated Ident.
-   */
-  private createIdent(before: Ident, after: Ident): Ident {
-    let distance: number = 0;
-    let depth: number = -1;
-    let min: number = 0;
-    let max: number = 0;
-    
-    while (distance < 1) {
-      depth++;
-      let left = before.get(depth);
-      let right = after.get(depth);
-      min = left ? left.digit : 0;
-      max = right ? right.digit : this.getWidthAtDepth(depth);
-      distance = max - min - 1;
-    }
-    
-    let boundary = Math.min(distance, this.options.maxDistance);
-    let delta = Math.floor(Math.random() * boundary) + 1;
-    let strategy = this.getStrategyAtDepth(depth);
-    
-    let ident = new Ident(++this.time, before.slice(depth, this.replica));
-    
-    if (strategy == Strategy.AddFromLeft) {
-      ident.add(Segment(min + delta, this.replica));
-    }
-    else {
-      ident.add(Segment(max - delta, this.replica));
-    }
-    
-    return ident;
-  }
-  
-  /**
-   * Gets the maximum addressable digit at the specified depth. This is
-   * generally 2^(depth + startingWidth) - 1, with a maximum of 2^53 - 1
-   * (the largest integer that can be stored in a Number.)
-   * @param depth The desired depth.
-   * @returns The maximum addressable digit at the specified depth.
-   */
-  private getWidthAtDepth(depth: number): number {
-    let power = depth + this.options.startingWidth;
-    if (power > 53) power = 53;
-    return Math.pow(2, power) - 1;
-  }
-  
-  /**
-   * Gets the digit allocation strategy for the specified depth.
-   * If none has been selected, one is chosen at random.
-   * @param depth The desired depth.
-   * @returns The Strategy to use at that depth.
-   */
-  private getStrategyAtDepth(depth: number): Strategy {
-    let strategy = this.strategies[depth];
-    if (!strategy) {
-      let random = Math.floor(Math.random() * 2) + 1;
-      strategy = this.strategies[depth] = <Strategy> random;
-    }
-    return strategy;
-  }
-  
+   
 }

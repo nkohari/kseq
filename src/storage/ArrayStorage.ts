@@ -1,6 +1,6 @@
 import {Atom} from './Atom';
 import {Storage} from './Storage';
-import {Ident} from './Ident';
+import {Ident} from '../idents';
 
 /**
  * An implementation of Storage<T> that uses a binary insertion sort over
@@ -40,7 +40,7 @@ export class ArrayStorage<T> implements Storage<T> {
     if (existing && id.compare(existing.id) == 0) {
       return -1;
     }
-    let atom = new Atom<T>(id, value);
+    let atom = Atom<T>(id, value);
     this.atoms.splice(pos, 0, atom);
     return pos;
   }

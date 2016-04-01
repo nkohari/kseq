@@ -1,9 +1,8 @@
 /// <reference path="../typings/main/ambient/mocha/index.d.ts" />
 /// <reference path="../typings/main/ambient/chai/index.d.ts" />
 
-import {ArrayStorage} from '../src/ArrayStorage';
-import {Ident} from '../src/Ident';
-import {Segment} from '../src/Segment';
+import {ArrayStorage} from '../src/storage';
+import {Ident, Segment} from '../src/idents';
 import {assert} from 'chai';
 
 describe("ArrayStorage", () => {

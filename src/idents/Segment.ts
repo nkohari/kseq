@@ -16,9 +16,10 @@ export interface Segment {
 }
 
 /**
- * A simple factory function to create Segments.
+ * Creates a new path segment.
  * @param digit   The digit of the Segment.
  * @param replica The replica identifier for the Segment.
+ * @returns The created Segment.
  */
 export function Segment(digit: number, replica: string): Segment {
   return {digit, replica};

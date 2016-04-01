@@ -1,8 +1,7 @@
 /// <reference path="../typings/main/ambient/mocha/index.d.ts" />
 /// <reference path="../typings/main/ambient/chai/index.d.ts" />
 
-import {Sequence} from '../src/Sequence';
-import {OpKind} from '../src/Op';
+import {Sequence, OpKind} from '../src';
 import {assert} from 'chai';
 
 describe("Sequence", () => {
@@ -52,7 +51,7 @@ describe("Sequence", () => {
     });
     
     it("can add 1000 items at the end", () => {
-      let seq = new Sequence<number>("test", {startingWidth: 16});
+      let seq = new Sequence<number>("test");
       for (let i = 1; i <= 1000; i++) {
         seq.insert(i, seq.size());
       }
@@ -61,7 +60,7 @@ describe("Sequence", () => {
     });
     
     it("can add 1000 items at the beginning", () => {
-      let seq = new Sequence<number>("test", {startingWidth: 16});
+      let seq = new Sequence<number>("test");
       for (let i = 1; i <= 1000; i++) {
         seq.insert(i, 0);
       }

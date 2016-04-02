@@ -2,9 +2,9 @@ import {Atom} from './Atom';
 import {Ident} from '../idents';
 
 /**
- * A sorted set of Atom<T>s, used as backing storage by Sequence<T>.
+ * A sorted list of Atom<T>s, used as backing storage by Sequence<T>.
  */
-export interface Storage<T> {
+export interface AtomList<T> {
   
   /**
    * Returns the number of atoms currently stored.

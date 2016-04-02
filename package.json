@@ -1,10 +1,9 @@
 {
-  "name": "lseq",
+  "name": "kseq",
   "version": "0.1.0",
-  "description": "an ordered vector CRDT based on LSEQ",
+  "description": "an ordered sequence CRDT based on Logoot/LSEQ",
   "main": ".build/index.js",
   "dependencies": {
-    "lodash": "^4.7.0"
   },
   "devDependencies": {
     "chai": "^3.5.0",

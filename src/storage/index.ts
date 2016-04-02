@@ -1,3 +1,3 @@
-export * from './ArrayStorage';
+export * from './ArrayAtomList';
 export * from './Atom';
-export * from './Storage';
+export * from './AtomList';

@@ -11,18 +11,11 @@ export class Ident {
   path: Segment[]
   
   /**
-   * The (logical) timestamp for the identifier. 
-   */
-  time: number
-  
-  /**
    * Creates an instance of Ident.
-   * @param time The logical timestamp.
    * @param path The ordered set of path segments.
    * @returns An instance of Ident.
    */
-  constructor(time: number, path: Segment[]) {
-    this.time = time;
+  constructor(path: Segment[]) {
     this.path = path;
   }
   
@@ -32,12 +25,11 @@ export class Ident {
    * @returns The parsed instance of Ident.
    */
   static parse(str: string): Ident {
-    let [pathString, time] = str.split('#', 1);
-    let path = pathString.split('/').map((token) => {
+    let path = str.split('/').map((token) => {
       let [digit, replica] = token.split('.');
       return Segment(Number(digit), replica);
     });
-    return new Ident(Number(time), path);
+    return new Ident(path);
   }
   
   /**
@@ -100,8 +92,6 @@ export class Ident {
       if (my.replica < their.replica) return -1;
       if (my.replica > their.replica) return 1;
     }
-    if (this.time < other.time) return -1;
-    if (this.time > other.time) return 1;
     return 0;
   }
   
@@ -110,8 +100,7 @@ export class Ident {
    * @returns The string representation.
    */
   toString(): string {
-    let path = this.path.map((seg) => `${seg.digit}.${seg.replica}`).join('/');
-    return `${path}#${this.time}`;
+    return this.path.map((seg) => `${seg.digit}.${seg.replica}`).join('/');
   }
   
 }

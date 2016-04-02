@@ -1,31 +1,49 @@
 import {defaults} from 'lodash';
-import {Ident, IdentGenerator, LSEQIdentGenerator, Segment} from './idents';
-import {Storage, ArrayStorage} from './storage';
+import {Ident, IdentSet, IdentGenerator, LSEQIdentGenerator, Segment} from './idents';
+import {AtomList, ArrayAtomList} from './storage';
 import {Op, OpKind, InsertOp, RemoveOp} from './Op';
 
 /**
- * A CmRDT sequence that implements the LSEQ algorithm to support
- * concurrent simultaneous editing.
+ * A CmRDT sequence that supports concurrent simultaneous editing
+ * while preserving the intention of each edit.
  */
-export class Sequence<T> {
+export class KSeq<T> {
   
   /**
    * The unique replica id.
    */
   replica: string
   
-  private storage: Storage<T>
+  /**
+   * The current logical time.
+   */
+  private time: number
+  
+  /**
+   * The ordered list of atoms in the sequence.
+   */
+  private atoms: AtomList<T>
+  
+  /**
+   * The set of idents of atoms that have been removed.
+   */
+  private removed: IdentSet
+  
+  /**
+   * The generator used to create unique idents for new atoms.
+   */
   private identGenerator: IdentGenerator
   
   /**
-   * Creates an instance of Sequence<T>.
+   * Creates an instance of KSeq<T>.
    * @param replica The unique replica id for the sequence.
    * @param options Options that customize the sequence.
-   * @returns An instance of Sequence<T>.
+   * @returns An instance of KSeq<T>.
    */
-  constructor(replica: string, storage?: Storage<T>, identGenerator?: IdentGenerator) {
+  constructor(replica: string, atoms?: AtomList<T>, identGenerator?: IdentGenerator) {
     this.replica = replica;
-    this.storage = storage || new ArrayStorage<T>();
+    this.atoms = atoms || new ArrayAtomList<T>();
+    this.removed = new IdentSet();
     this.identGenerator = identGenerator || new LSEQIdentGenerator(replica);
   }
   
@@ -34,7 +52,7 @@ export class Sequence<T> {
    * @returns The number of items in the sequence.
    */
   size(): number {
-    return this.storage.size();
+    return this.atoms.size();
   }
   
   /**
@@ -54,16 +72,16 @@ export class Sequence<T> {
    * Inserts a value into the sequence at the specified position.
    * @param value The value to insert.
    * @param pos   The position at which to insert the value.
-   * @returns An InsertOp that can be applied to other Sequences
+   * @returns An InsertOp that can be applied to other KSeqs
    *          to reproduce the insertion.
    */
   insert(value: T, pos: number): InsertOp {
     if (pos < 0) throw new RangeError(`The position ${pos} must be greater than or equal to zero.`);
     
-    let before = this.storage.get(pos - 1);
-    let after = this.storage.get(pos);
+    let before = this.atoms.get(pos - 1);
+    let after = this.atoms.get(pos);
     let id = this.identGenerator.getIdent((before && before.id), (after && after.id));
-    let op = new InsertOp(id, value);
+    let op = new InsertOp(this.replica, ++this.time, id, value);
     this.apply(op);
     
     return op;
@@ -72,7 +90,7 @@ export class Sequence<T> {
   /**
    * Appends a value to the end of the sequence.
    * @param value The value to append.
-   * @returns An InsertOp that can be applied to other Sequences
+   * @returns An InsertOp that can be applied to other KSeqs
    *          to reproduce the insertion.
    */
   append(value: T): InsertOp {
@@ -82,15 +100,15 @@ export class Sequence<T> {
   /**
    * Removes the value at the specified position from the sequence.
    * @param pos The position of the value to remove.
-   * @returns An RemoveOp that can be applied to other Sequences
+   * @returns An RemoveOp that can be applied to other KSeqs
    *          to reproduce the removal.
    */
   remove(pos: number): RemoveOp {
     if (pos < 0) throw new RangeError(`The position ${pos} must be greater than or equal to zero.`);
     
-    let atom = this.storage.get(pos);
+    let atom = this.atoms.get(pos);
     if (atom) {
-      let op = new RemoveOp(atom.id)
+      let op = new RemoveOp(this.replica, ++this.time, atom.id)
       this.apply(op);
       return op;
     }
@@ -105,7 +123,7 @@ export class Sequence<T> {
    *          or undefined if no such value exists. 
    */
   get(pos: number): T {
-    const atom = this.storage.get(pos);
+    const atom = this.atoms.get(pos);
     return atom ? atom.value : undefined;
   }
   
@@ -114,7 +132,7 @@ export class Sequence<T> {
    * @param func The function to apply.
    */
   forEach(func: { (T): void }): void {
-    this.storage.forEach((atom) => func(atom.value));
+    this.atoms.forEach((atom) => func(atom.value));
   }
   
   /**
@@ -123,7 +141,7 @@ export class Sequence<T> {
    * @returns An array containing the results of the function calls.
    */ 
   map<R>(func: { (T): R }): R[] {
-    return this.storage.map((atom) => func(atom.value));
+    return this.atoms.map((atom) => func(atom.value));
   }
   
   /**
@@ -131,7 +149,7 @@ export class Sequence<T> {
    * @returns An array representation of the values in the sequence.
    */ 
   toArray(): T[] {
-    return this.storage.map((atom) => atom.value);
+    return this.atoms.map((atom) => atom.value);
   }
   
   /**
@@ -140,25 +158,35 @@ export class Sequence<T> {
    */
   toJSON(): Object {
     return {
-      r: this.replica,
-      d: this.storage.map((atom) => [atom.id.toString(), atom.value])
+      id: this.replica,
+      t:  this.time,
+      d:  this.atoms.map((atom) => [atom.id.toString(), atom.value]),
+      r:  this.removed.toJSON()
     }
   }
   
   /**
-   * Applies the specified Op to the sequence. Typically this is used
-   * to apply operations that have been generated by remote sequences.
+   * Applies the specified Op to the sequence. This can be used to apply
+   * operations that have been generated by remote sequences.
    * @param op The Op to apply.
    */
   apply(op: Op): void {
     switch (op.kind) {
       case OpKind.Insert:
         let insertOp = <InsertOp> op;
-        this.storage.add(insertOp.id, insertOp.value);
+        // If an atom with the specified ident has already been removed,
+        // the ops have been received out of order. We should ignore the insert.
+        if (!this.removed.has(insertOp.id)) {
+          this.atoms.add(insertOp.id, insertOp.value);
+        }
         break;
       case OpKind.Remove:
         let removeOp = <RemoveOp> op;
-        this.storage.remove(removeOp.id);
+        // Ignore repeated remove ops.
+        if (!this.removed.has(removeOp.id)) {
+          this.atoms.remove(removeOp.id);
+          this.removed.add(removeOp.id);
+        }
         break;
       default:
         throw new Error(`Unknown op kind ${op.kind}`);

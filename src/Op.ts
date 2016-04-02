@@ -4,12 +4,20 @@ import {Ident} from './idents';
  * The kind of operation.
  */
 export enum OpKind {
+  
+  /**
+   * The insertion of a value.
+   */
   Insert = 1,
+  
+  /**
+   * The removal of a value.
+   */
   Remove = 2,
 }
 
 /**
- * An operation on a Sequence<T>.
+ * An operation that can be applied to a KSeq.
  */
 export abstract class Op {
   
@@ -19,12 +27,26 @@ export abstract class Op {
   kind: OpKind
   
   /**
+   * The id of the replica on which the operation was performed.
+   */
+  replica: string
+  
+  /**
+   * The local logical time when the operation was performed.
+   */
+  time: number
+  
+  /**
    * Creates an instance of Op.
-   * @param kind The kind of operation.
+   * @param kind    The kind of operation.
+   * @param replica The id of the replica on which the operation was performed.
+   * @param time    The local logical time when the operation was performed.
    * @returns An instance of Op.
    */
-  constructor(kind: OpKind) {
+  constructor(kind: OpKind, replica: string, time: number) {
     this.kind = kind;
+    this.replica = replica;
+    this.time = time;
   }
   
   /**
@@ -34,13 +56,9 @@ export abstract class Op {
    */
   static parse(str: string): Op {
     const kind = str[0];
-    const [idString, value] = str.substr(1).split('!');
-    const id = Ident.parse(idString);
     switch(kind) {
-      case '+':
-        return new InsertOp(id, value);
-      case '-':
-        return new RemoveOp(id);
+      case '+': return InsertOp.parse(str);
+      case '-': return RemoveOp.parse(str);
     }
   }
   
@@ -52,8 +70,8 @@ export abstract class Op {
 }
 
 /**
- * An operation that inserts an atom into the sequence with
- * the specified identifier and value.
+ * An operation that inserts an atom into the sequence with the specified
+ * identifier and value.
  */
 export class InsertOp extends Op {
   
@@ -69,21 +87,33 @@ export class InsertOp extends Op {
   
   /**
    * Creates an instance of InsertOp.
-   * @param id    The identifier for the value.
-   * @param value The value to insert.
+   * @param replica The id of the replica on which the operation was performed.
+   * @param time    The local logical time when the operation was performed.
+   * @param id      The identifier for the value.
+   * @param value   The value to insert.
    * @returns An instance of InsertOp.
    */
-  constructor(id: Ident, value: any) {
-    super(OpKind.Insert)
+  constructor(replica: string, time: number, id: Ident, value: any) {
+    super(OpKind.Insert, replica, time)
     this.id = id;
     this.value = value;
+  }
+  
+  /**
+   * Converts an encoded string to an InsertOp.
+   * @param str The encoded string.
+   * @returns An instance of the encoded InsertOp.
+   */
+  static parse(str: string): InsertOp {
+    let [replica, time, id, value] = str.substr(1).split(':');
+    return new InsertOp(replica, Number(time), Ident.parse(str), value);
   }
   
   /**
    * @inheritdoc
    */
   toString() {
-    return `+${this.id.toString()}!${this.value.toString()}`
+    return `+${this.replica}:${this.time}:${this.id.toString()}:${this.value.toString()}`
   }
   
 }
@@ -100,19 +130,31 @@ export class RemoveOp extends Op {
   
   /**
    * Creates an instance of RemoveOp.
-   * @param id The identifier of the atom to remove.
+   * @param replica The id of the replica on which the operation was performed.
+   * @param time    The local logical time when the operation was performed.
+   * @param id      The identifier of the atom to remove.
    * @returns An instance of RemoveOp.
    */
-  constructor(id: Ident) {
-    super(OpKind.Remove)
+  constructor(replica: string, time: number, id: Ident) {
+    super(OpKind.Remove, replica, time)
     this.id = id;
+  }
+  
+  /**
+   * Converts an encoded string to an RemoveOp.
+   * @param str The encoded string.
+   * @returns An instance of the encoded RemoveOp.
+   */
+  static parse(str: string): RemoveOp {
+    let [replica, time, id] = str.substr(1).split(':');
+    return new RemoveOp(replica, Number(time), Ident.parse(str));
   }
   
   /**
    * @inheritdoc
    */
   toString() {
-    return `-${this.id.toString()}`
+    return `-${this.replica}:${this.time}:${this.id.toString()}`
   }
   
 }

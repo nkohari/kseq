@@ -1,17 +1,17 @@
 import {Atom} from './Atom';
-import {Storage} from './Storage';
+import {AtomList} from './AtomList';
 import {Ident} from '../idents';
 
 /**
- * An implementation of Storage<T> that uses a binary insertion sort over
+ * An implementation of AtomList<T> that uses a binary insertion sort over
  * an array to track a sorted list of atoms.
  */
-export class ArrayStorage<T> implements Storage<T> {
+export class ArrayAtomList<T> implements AtomList<T> {
   
   private atoms: Atom<T>[]
   
   /**
-   * Creates an instange of ArrayStorage<T>.
+   * Creates an instange of ArrayAtomList<T>.
    */
   constructor() {
     this.atoms = [];

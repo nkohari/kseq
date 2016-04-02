@@ -28,7 +28,6 @@ export class LSEQIdentGenerator implements IdentGenerator {
   startingWidth: number
   maxDistance: number
   strategies: LSEQStrategy[]
-  time: number
   first: Ident
   last: Ident
   
@@ -44,16 +43,8 @@ export class LSEQIdentGenerator implements IdentGenerator {
     this.startingWidth = startingWidth;
     this.maxDistance = maxDistance;
     this.strategies = [];
-    this.time = 0;
-    this.first = new Ident(0, [Segment(0, this.replica)]);
-    this.last = new Ident(0, [Segment(this.getWidthAtDepth(0), this.replica)]);
-  }
-  
-  /**
-   * @inheritdoc
-   */
-  getTime(): number {
-    return this.time;
+    this.first = new Ident([Segment(0, this.replica)]);
+    this.last = new Ident([Segment(this.getWidthAtDepth(0), this.replica)]);
   }
   
   /**
@@ -79,7 +70,7 @@ export class LSEQIdentGenerator implements IdentGenerator {
     let delta = Math.floor(Math.random() * boundary) + 1;
     let strategy = this.getStrategyAtDepth(depth);
     
-    let ident = new Ident(++this.time, before.slice(depth, this.replica));
+    let ident = new Ident(before.slice(depth, this.replica));
     
     if (strategy == LSEQStrategy.AddFromLeft) {
       ident.add(Segment(min + delta, this.replica));

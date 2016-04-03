@@ -3,8 +3,7 @@
   "version": "0.1.0",
   "description": "an ordered sequence CRDT based on Logoot/LSEQ",
   "main": ".build/index.js",
-  "dependencies": {
-  },
+  "dependencies": {},
   "devDependencies": {
     "chai": "^3.5.0",
     "mocha": "^2.4.5",

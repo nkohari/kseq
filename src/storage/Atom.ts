@@ -1,7 +1,7 @@
 import {Ident} from '../idents';
 
 /**
- * A value stored in the Sequence, with its unique identifier.
+ * A value stored in the KSeq, with its unique identifier.
  */
 export interface Atom<T> {
   
@@ -14,6 +14,7 @@ export interface Atom<T> {
    * The atom's value.
    */
   value: T
+  
 }
 
 /**

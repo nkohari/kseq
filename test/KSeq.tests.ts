@@ -4,6 +4,10 @@
 import {KSeq, OpKind, InsertOp, RemoveOp, Ident} from '../src';
 import {assert} from 'chai';
 
+function getWallTime(): number {
+  return Math.floor(new Date().valueOf() / 1000);
+}
+
 describe("KSeq", () => {
   
   //--------------------------------------------------------------------------------
@@ -18,7 +22,7 @@ describe("KSeq", () => {
     it("assigns the replica id to the KSeq instance", () => {
       let name = Math.floor(Math.random() * 100000).toString();
       let seq = new KSeq<string>(name);
-      assert.equal(name, seq.replica);
+      assert.equal(name, seq.name);
     });
     
   });
@@ -163,7 +167,7 @@ describe("KSeq", () => {
           let op1 = seq.insert(42, 0);
           assert.equal(seq.size(), 1);
           assert.equal(seq.get(0), 42);
-          let op2 = new InsertOp("test", 1, op1.id, 99);
+          let op2 = new InsertOp("test", getWallTime(), op1.id, 99);
           seq.apply(op2);
           assert.equal(seq.size(), 1);
         });
@@ -178,7 +182,7 @@ describe("KSeq", () => {
           seq.append(99);
           seq.remove(0);
           assert.equal(seq.size(), 1);
-          let op2 = new InsertOp("test", 1, op1.id, 123);
+          let op2 = new InsertOp("test", getWallTime(), op1.id, 123);
           seq.apply(op2);
           assert.equal(seq.size(), 1);
         });
@@ -230,7 +234,7 @@ describe("KSeq", () => {
           seq.append(99);
           seq.remove(0);
           assert.equal(seq.size(), 1);
-          let op2 = new RemoveOp("test", 1, op1.id);
+          let op2 = new RemoveOp("test", getWallTime(), op1.id);
           seq.apply(op2);
           assert.equal(seq.size(), 1);
         });
@@ -249,9 +253,9 @@ describe("KSeq", () => {
       let seq = new KSeq<string>("alice");
       seq.append("test");
       assert.equal(seq.size(), 1);
-      let ident = Ident.parse("0.bob");
-      let op1 = new InsertOp("bob", 1, ident, "hello");
-      let op2 = new RemoveOp("bob", 2, ident);
+      let ident = Ident.parse("1#0.bob");
+      let op1 = new InsertOp("bob", getWallTime(), ident, "hello");
+      let op2 = new RemoveOp("bob", getWallTime(), ident);
       seq.apply(op1);
       assert.equal(seq.size(), 2);
       seq.apply(op2);
@@ -262,8 +266,8 @@ describe("KSeq", () => {
       let seq = new KSeq<string>("alice");
       seq.append("test");
       assert.equal(seq.size(), 1);
-      let ident = Ident.parse("0.bob");
-      let op = new InsertOp("bob", 1, ident, "hello");
+      let ident = Ident.parse("1#0.bob");
+      let op = new InsertOp("bob", getWallTime(), ident, "hello");
       seq.apply(op);
       assert.equal(seq.size(), 2);
       seq.apply(op);
@@ -274,9 +278,9 @@ describe("KSeq", () => {
       let seq = new KSeq<string>("alice");
       seq.append("test");
       assert.equal(seq.size(), 1);
-      let ident = Ident.parse("0.bob");
-      let op1 = new InsertOp("bob", 1, ident, "hello");
-      let op2 = new RemoveOp("bob", 2, ident);
+      let ident = Ident.parse("1#0.bob");
+      let op1 = new InsertOp("bob", getWallTime(), ident, "hello");
+      let op2 = new RemoveOp("bob", getWallTime(), ident);
       seq.apply(op1);
       assert.equal(seq.size(), 2);
       seq.apply(op2);
@@ -289,9 +293,9 @@ describe("KSeq", () => {
       let seq = new KSeq<string>("alice");
       seq.append("test");
       assert.equal(seq.size(), 1);
-      let ident = Ident.parse("0.bob");
-      let op1 = new InsertOp("bob", 1, ident, "hello");
-      let op2 = new RemoveOp("bob", 2, ident);
+      let ident = Ident.parse("1#0.bob");
+      let op1 = new InsertOp("bob", getWallTime(), ident, "hello");
+      let op2 = new RemoveOp("bob", getWallTime(), ident);
       seq.apply(op2);
       assert.equal(seq.size(), 1);
       seq.apply(op1);

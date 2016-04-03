@@ -20,7 +20,8 @@ export class IdentSet {
   }
   
   /**
-   * Returns the number of idents in the set.
+   * Gets the cardinality of the set.
+   * @returns The number of idents in the set.
    */
   size(): number {
     return Object.keys(this.entries).length;

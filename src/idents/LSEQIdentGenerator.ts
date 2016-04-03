@@ -24,7 +24,6 @@ enum LSEQStrategy {
  */
 export class LSEQIdentGenerator implements IdentGenerator {
   
-  replica: string
   startingWidth: number
   maxDistance: number
   strategies: LSEQStrategy[]
@@ -33,24 +32,23 @@ export class LSEQIdentGenerator implements IdentGenerator {
   
   /**
    * Creates an instance of LSEQIdentGenerator.
-   * @param replica       The replica id.
    * @param startingWidth The width (2^x) of the first level of Idents.
    * @param maxDistance   The maximum delta between two Idents.
    * @returns An instance of LSEQIdentGenerator.
    */
-  constructor(replica: string, startingWidth: number = 4, maxDistance: number = 10) {
-    this.replica = replica;
+  constructor(startingWidth: number = 4, maxDistance: number = 10) {
     this.startingWidth = startingWidth;
     this.maxDistance = maxDistance;
     this.strategies = [];
-    this.first = new Ident([Segment(0, this.replica)]);
-    this.last = new Ident([Segment(this.getWidthAtDepth(0), this.replica)]);
   }
   
   /**
    * @inheritdoc
    */
-  getIdent(before: Ident = this.first, after: Ident = this.last): Ident {
+  getIdent(name: string, time: number, before: Ident, after: Ident): Ident {
+    
+    if (!before) before = this.getFirst(name);
+    if (!after)  after  = this.getLast(name);
     
     let distance: number = 0;
     let depth: number = -1;
@@ -70,16 +68,19 @@ export class LSEQIdentGenerator implements IdentGenerator {
     let delta = Math.floor(Math.random() * boundary) + 1;
     let strategy = this.getStrategyAtDepth(depth);
     
-    let ident = new Ident(before.slice(depth, this.replica));
+    let path = [];
+    for (let i = 0; i < depth; i++) {
+      path.push(before.get(i) || Segment(0, name));
+    }
     
     if (strategy == LSEQStrategy.AddFromLeft) {
-      ident.add(Segment(min + delta, this.replica));
+      path.push(Segment(min + delta, name));
     }
     else {
-      ident.add(Segment(max - delta, this.replica));
+      path.push(Segment(max - delta, name));
     }
     
-    return ident;
+    return new Ident(time, path);
   }
   
   /**
@@ -108,6 +109,26 @@ export class LSEQIdentGenerator implements IdentGenerator {
       strategy = this.strategies[depth] = <LSEQStrategy> random;
     }
     return strategy;
+  }
+  
+  /**
+   * Gets the first possible ident that can be generated.
+   * @param name The replica name.
+   * @returns The ident.
+   */
+  private getFirst(name: string): Ident {
+    if (!this.first) this.first = new Ident(0, [Segment(0, name)]);
+    return this.first;
+  }
+  
+  /**
+   * Gets the first possible ident that can be generated.
+   * @param name The replica name.
+   * @returns The ident.
+   */
+  private getLast(name: string): Ident {
+    if (!this.last) this.last = new Ident(0, [Segment(this.getWidthAtDepth(0), name)]);
+    return this.last;
   }
   
 }

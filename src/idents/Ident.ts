@@ -8,14 +8,21 @@ export class Ident {
   /**
    * The ordered set of path segments that make up the identifier.
    */
-  path: Segment[]
+  private path: Segment[]
+  
+  /**
+   * The local logical time of the replica that created the identifier.
+   */
+  private time: number
   
   /**
    * Creates an instance of Ident.
+   * @param time The local logical time of the creating replica.
    * @param path The ordered set of path segments.
    * @returns An instance of Ident.
    */
-  constructor(path: Segment[]) {
+  constructor(time: number, path: Segment[]) {
+    this.time = time;
     this.path = path;
   }
   
@@ -25,11 +32,12 @@ export class Ident {
    * @returns The parsed instance of Ident.
    */
   static parse(str: string): Ident {
-    let path = str.split('/').map((token) => {
+    let [time, pathString] = str.split('#');
+    let path = pathString.split('/').map((token) => {
       let [digit, replica] = token.split('.');
       return Segment(Number(digit), replica);
     });
-    return new Ident(path);
+    return new Ident(Number(time), path);
   }
   
   /**
@@ -45,32 +53,8 @@ export class Ident {
    * Gets the depth of the path (the number of segments it contains).
    * @returns The depth.
    */
-  getDepth(): number {
+  depth(): number {
     return this.path.length;
-  }
-  
-  /**
-   * Appends the specified Segment to the end of the path.
-   * @param segment The Segment to append.
-   */
-  add(segment: Segment) {
-    this.path.push(segment);
-  }
-  
-  /**
-   * Returns a subset of the identifier's path, up until the specified
-   * depth. If the identifier is not deep enough, segments are filled
-   * in using the specified replica id.
-   * @param depth   The desired depth.
-   * @param replica The replica id to use to fill in missing segments.
-   * @returns An array of Segments representing the subpath.
-   */
-  slice(depth: number, replica: string): Segment[] {
-    let path = [];
-    for (let i = 0; i < depth; i++) {
-      path.push(this.path[i] || Segment(0, replica));
-    }
-    return path;
   }
   
   /**
@@ -92,6 +76,8 @@ export class Ident {
       if (my.replica < their.replica) return -1;
       if (my.replica > their.replica) return 1;
     }
+    if (this.time < other.time) return -1;
+    if (this.time > other.time) return 1;
     return 0;
   }
   
@@ -100,7 +86,8 @@ export class Ident {
    * @returns The string representation.
    */
   toString(): string {
-    return this.path.map((seg) => `${seg.digit}.${seg.replica}`).join('/');
+    let path = this.path.map((seg) => `${seg.digit}.${seg.replica}`).join('/');
+    return `${this.time}#${path}`;
   }
   
 }

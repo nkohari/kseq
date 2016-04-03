@@ -10,9 +10,9 @@ import {Op, OpKind, InsertOp, RemoveOp} from './Op';
 export class KSeq<T> {
   
   /**
-   * The unique replica id.
+   * The unique name of this replica.
    */
-  replica: string
+  name: string
   
   /**
    * The current logical time.
@@ -36,15 +36,16 @@ export class KSeq<T> {
   
   /**
    * Creates an instance of KSeq<T>.
-   * @param replica The unique replica id for the sequence.
-   * @param options Options that customize the sequence.
+   * @param name           The unique name for this replica.
+   * @param atoms          The backing storage, if null, creates a new ArrayAtomList<T>.
+   * @param identGenerator The id generator, if null, creates a new LSEQIdentGenerator.
    * @returns An instance of KSeq<T>.
    */
-  constructor(replica: string, atoms?: AtomList<T>, identGenerator?: IdentGenerator) {
-    this.replica = replica;
+  constructor(name: string, atoms?: AtomList<T>, identGenerator?: IdentGenerator) {
+    this.name = name;
     this.atoms = atoms || new ArrayAtomList<T>();
     this.removed = new IdentSet();
-    this.identGenerator = identGenerator || new LSEQIdentGenerator(replica);
+    this.identGenerator = identGenerator || new LSEQIdentGenerator();
   }
   
   /**
@@ -62,7 +63,7 @@ export class KSeq<T> {
   depth(): number {
     let max = 0;
     this.forEach((atom) => {
-      let depth = atom.id.getDepth();
+      let depth = atom.id.depth();
       if (max < depth) max = depth;
     });
     return max;
@@ -80,8 +81,8 @@ export class KSeq<T> {
     
     let before = this.atoms.get(pos - 1);
     let after = this.atoms.get(pos);
-    let id = this.identGenerator.getIdent((before && before.id), (after && after.id));
-    let op = new InsertOp(this.replica, ++this.time, id, value);
+    let id = this.identGenerator.getIdent(this.name, ++this.time, (before && before.id), (after && after.id));
+    let op = new InsertOp(this.name, this.getWallTime(), id, value);
     this.apply(op);
     
     return op;
@@ -108,7 +109,7 @@ export class KSeq<T> {
     
     let atom = this.atoms.get(pos);
     if (atom) {
-      let op = new RemoveOp(this.replica, ++this.time, atom.id)
+      let op = new RemoveOp(this.name, this.getWallTime(), atom.id)
       this.apply(op);
       return op;
     }
@@ -158,9 +159,9 @@ export class KSeq<T> {
    */
   toJSON(): Object {
     return {
-      id: this.replica,
+      id: this.name,
       t:  this.time,
-      d:  this.atoms.map((atom) => [atom.id.toString(), atom.value]),
+      s:  this.atoms.map((atom) => [atom.id.toString(), atom.value]),
       r:  this.removed.toJSON()
     }
   }
@@ -191,6 +192,14 @@ export class KSeq<T> {
       default:
         throw new Error(`Unknown op kind ${op.kind}`);
     }
+  }
+  
+  /**
+   * Gets the current wall time as a UNIX epoch timestamp.
+   * @returns An integer representing the wall time.
+   */
+  private getWallTime(): number {
+    return Math.floor(new Date().valueOf() / 1000);
   }
    
 }

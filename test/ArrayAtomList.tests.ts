@@ -24,8 +24,8 @@ describe("ArrayAtomList", () => {
     
     it("compares idents by value, not identity", () => {
       let list = new ArrayAtomList<string>();
-      list.add(Ident.parse("0.foo"), 'line one');
-      let ident = Ident.parse("0.foo");
+      list.add(Ident.parse("1#0.foo"), 'line one');
+      let ident = Ident.parse("1#0.foo");
       assert.equal(list.indexOf(ident), 0);
     });
         
@@ -33,8 +33,8 @@ describe("ArrayAtomList", () => {
       
       it("returns -1", () => {
         let list = new ArrayAtomList<string>();
-        let x = Ident.parse("0.foo");
-        let y = Ident.parse("1.foo");
+        let x = Ident.parse("1#0.foo");
+        let y = Ident.parse("1#1.foo");
         list.add(x, 'line one');
         assert.equal(list.indexOf(y), -1);
       });
@@ -45,9 +45,9 @@ describe("ArrayAtomList", () => {
 
       it("returns the position of the atom with the ident", () => {
         let list = new ArrayAtomList<string>();
-        let x = Ident.parse("0.foo");
-        let y = Ident.parse("0.bar");
-        let z = Ident.parse("0.zap");
+        let x = Ident.parse("1#0.foo");
+        let y = Ident.parse("1#0.bar");
+        let z = Ident.parse("1#0.zap");
         list.add(x, 'line one');
         list.add(y, 'line two');
         list.add(z, 'line three');
@@ -66,7 +66,7 @@ describe("ArrayAtomList", () => {
       
       it("adds a new atom", () => {
         let list = new ArrayAtomList<string>();
-        let ident = Ident.parse("0.foo");
+        let ident = Ident.parse("1#0.foo");
         let value = 'line one'
         list.add(ident, value);
         let atom = list.get(0);
@@ -76,7 +76,7 @@ describe("ArrayAtomList", () => {
       
       it("returns the insert position", () => {
         let list = new ArrayAtomList<string>();
-        let ident = Ident.parse("0.foo");
+        let ident = Ident.parse("1#0.foo");
         let ret = list.add(ident, 'line one');
         assert.equal(ret, 0);
       });
@@ -87,8 +87,8 @@ describe("ArrayAtomList", () => {
 
       it("does not add an atom", () => {
         let list = new ArrayAtomList<string>();
-        let x = Ident.parse("0.foo");
-        let y = Ident.parse("0.foo");
+        let x = Ident.parse("1#0.foo");
+        let y = Ident.parse("1#0.foo");
         list.add(x, 'line one');
         list.add(y, 'line two');
         assert.equal(list.size(), 1);
@@ -97,8 +97,8 @@ describe("ArrayAtomList", () => {
 
       it("returns -1", () => {
         let list = new ArrayAtomList<string>();
-        let x = Ident.parse("0.foo");
-        let y = Ident.parse("0.foo");
+        let x = Ident.parse("1#0.foo");
+        let y = Ident.parse("1#0.foo");
         list.add(x, 'line one');
         let ret = list.add(y, 'line two');
         assert.equal(ret, -1);
@@ -116,7 +116,7 @@ describe("ArrayAtomList", () => {
 
       it("removes the atom with the ident", () => {
         let list = new ArrayAtomList<string>();
-        let ident = Ident.parse("0.foo");
+        let ident = Ident.parse("1#0.foo");
         list.add(ident, 'line one');
         assert.equal(list.size(), 1);
         list.remove(ident);
@@ -125,7 +125,7 @@ describe("ArrayAtomList", () => {
       
       it("returns the position that the atom occupied", () => {
         let list = new ArrayAtomList<string>();
-        let ident = Ident.parse("0.foo");
+        let ident = Ident.parse("1#0.foo");
         list.add(ident, 'line one');
         let pos = list.remove(ident);
         assert.equal(pos, 0);
@@ -137,7 +137,7 @@ describe("ArrayAtomList", () => {
 
       it("returns -1", () => {
         let list = new ArrayAtomList<string>();
-        let ident = Ident.parse("0.foo");
+        let ident = Ident.parse("1#0.foo");
         let pos = list.remove(ident);
         assert.equal(pos, -1);
       });
@@ -152,8 +152,8 @@ describe("ArrayAtomList", () => {
     
     it("applies the function to each atom in the list", () => {
       let list = new ArrayAtomList<string>();
-      let x = Ident.parse("0.foo");
-      let y = Ident.parse("1.foo");
+      let x = Ident.parse("1#0.foo");
+      let y = Ident.parse("1#1.foo");
       list.add(x, 'line one');
       list.add(y, 'line two');
       let calls = [];
@@ -169,8 +169,8 @@ describe("ArrayAtomList", () => {
     
     it("applies the function to each atom in the list", () => {
       let list = new ArrayAtomList<string>();
-      let x = Ident.parse("0.foo");
-      let y = Ident.parse("1.foo");
+      let x = Ident.parse("1#0.foo");
+      let y = Ident.parse("1#1.foo");
       list.add(x, 'line one');
       list.add(y, 'line two');
       let values = list.map((atom) => atom.value);
@@ -185,8 +185,8 @@ describe("ArrayAtomList", () => {
     
     it("returns an array of atoms in the list", () => {
       let list = new ArrayAtomList<string>();
-      let x = Ident.parse("0.foo");
-      let y = Ident.parse("1.foo");
+      let x = Ident.parse("1#0.foo");
+      let y = Ident.parse("1#1.foo");
       list.add(x, 'line one');
       list.add(y, 'line two');
       let atoms = list.toArray();

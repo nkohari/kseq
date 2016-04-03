@@ -34,7 +34,7 @@ will be altered in a way such that it *appears* that the operations were execute
 
 # Approach
 
-KSeq is an operations-based *continuous sequence* CRDT [2] based on the Logoot [3]
+KSeq is an operations-based, continuous sequence CRDT [2] based on the Logoot [3]
 and LSEQ [4] systems. However, these structures make the assumption of causal delivery of messages,
 either limiting their application or requiring an external system to enforce this guarantee.
 
@@ -100,13 +100,13 @@ its own replica.
 # Limitations
 
 While KSeq is tolerant to message loss and incorrect delivery, in order for the state of all replicas
-to converge, all operations *must eventually be applied* to all replicas. This limitation is similar to
-most (all?) other distributed systems, and is typically solved either through read-repair or perpetually
-retrying delivery.
+to converge, all operations *must eventually be applied* to all replicas. This is a limitation of
+operations-based CRDTs, and is probably best solved through read-repair.
 
 Currently, KSeq is implemented with a rudimentary id generation system using simple JS `Number`s.
-This is memory-intensive, and would benefit from an implementation as that described in [4], using
-a dense bitfield.
+This is memory-intensive, and may benefit from an dense bitfield implementation as described in [4].
+However, further testing is needed, since the cost of conversion between strings and bitfields
+may outweigh the improved memory usage.
 
 As a KSeq is edited, newly-generated identifiers will become longer, and the cardinality of **R** will
 continue to grow. This means that the performance of the KSeq will gradually degrade over time. This

@@ -1,7 +1,8 @@
-/// <reference path="../typings/main/ambient/mocha/index.d.ts" />
 /// <reference path="../typings/main/ambient/chai/index.d.ts" />
+/// <reference path="../typings/main/ambient/mocha/index.d.ts" />
 
-import {KSeq, OpKind, InsertOp, RemoveOp, Ident} from '../src';
+import {KSeq, OpKind, InsertOp, RemoveOp} from '../src';
+import {Ident} from '../src/idents';
 import {assert} from 'chai';
 
 function getWallTime(): number {

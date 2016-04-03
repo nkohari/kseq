@@ -1,8 +1,9 @@
 {
   "name": "kseq",
   "version": "0.1.0",
-  "description": "an ordered sequence CRDT based on Logoot/LSEQ",
-  "main": ".build/index.js",
+  "description": "An ordered sequence CRDT based on Logoot/LSEQ",
+  "main": "dist/index.js",
+  "typings": "dist/index.d.ts",
   "dependencies": {},
   "devDependencies": {
     "chai": "^3.5.0",

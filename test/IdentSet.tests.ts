@@ -1,5 +1,5 @@
-/// <reference path="../typings/main/ambient/mocha/index.d.ts" />
 /// <reference path="../typings/main/ambient/chai/index.d.ts" />
+/// <reference path="../typings/main/ambient/mocha/index.d.ts" />
 
 import {IdentSet, Ident} from '../src/idents';
 import {assert} from 'chai';

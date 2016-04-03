@@ -1,4 +1,3 @@
-import {defaults} from 'lodash';
 import {Ident, IdentSet, IdentGenerator, LSEQIdentGenerator, Segment} from './idents';
 import {AtomList, ArrayAtomList} from './storage';
 import {Op, OpKind, InsertOp, RemoveOp} from './Op';
@@ -159,10 +158,10 @@ export class KSeq<T> {
    */
   toJSON(): Object {
     return {
-      id: this.name,
-      t:  this.time,
-      s:  this.atoms.map((atom) => [atom.id.toString(), atom.value]),
-      r:  this.removed.toJSON()
+      n: this.name,
+      t: this.time,
+      s: this.atoms.map((atom) => [atom.id.toString(), atom.value]),
+      r: this.removed.toJSON()
     }
   }
   

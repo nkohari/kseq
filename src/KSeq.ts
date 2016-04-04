@@ -42,6 +42,7 @@ export class KSeq<T> {
    */
   constructor(name: string, atoms?: AtomList<T>, identGenerator?: IdentGenerator) {
     this.name = name;
+    this.time = 0;
     this.atoms = atoms || new ArrayAtomList<T>();
     this.removed = new IdentSet();
     this.identGenerator = identGenerator || new LSEQIdentGenerator();

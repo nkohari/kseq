@@ -8,6 +8,15 @@ import {assert} from 'chai';
 function getWallTime(): number {
   return Math.floor(new Date().valueOf() / 1000);
 }
+     
+function randomize(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    let j = Math.floor(Math.random() * (i + 1));
+    let temp = arr[i];
+    arr[i] = arr[j];
+    arr[j] = temp;
+  }
+}
 
 describe("KSeq", () => {
   
@@ -254,7 +263,7 @@ describe("KSeq", () => {
       let seq = new KSeq<string>("alice");
       seq.append("test");
       assert.equal(seq.size(), 1);
-      let ident = Ident.parse("1#0.bob");
+      let ident = Ident.parse("1#0:bob");
       let op1 = new InsertOp("bob", getWallTime(), ident, "hello");
       let op2 = new RemoveOp("bob", getWallTime(), ident);
       seq.apply(op1);
@@ -267,7 +276,7 @@ describe("KSeq", () => {
       let seq = new KSeq<string>("alice");
       seq.append("test");
       assert.equal(seq.size(), 1);
-      let ident = Ident.parse("1#0.bob");
+      let ident = Ident.parse("1#0:bob");
       let op = new InsertOp("bob", getWallTime(), ident, "hello");
       seq.apply(op);
       assert.equal(seq.size(), 2);
@@ -279,7 +288,7 @@ describe("KSeq", () => {
       let seq = new KSeq<string>("alice");
       seq.append("test");
       assert.equal(seq.size(), 1);
-      let ident = Ident.parse("1#0.bob");
+      let ident = Ident.parse("1#0:bob");
       let op1 = new InsertOp("bob", getWallTime(), ident, "hello");
       let op2 = new RemoveOp("bob", getWallTime(), ident);
       seq.apply(op1);
@@ -294,13 +303,67 @@ describe("KSeq", () => {
       let seq = new KSeq<string>("alice");
       seq.append("test");
       assert.equal(seq.size(), 1);
-      let ident = Ident.parse("1#0.bob");
+      let ident = Ident.parse("1#0:bob");
       let op1 = new InsertOp("bob", getWallTime(), ident, "hello");
       let op2 = new RemoveOp("bob", getWallTime(), ident);
       seq.apply(op2);
       assert.equal(seq.size(), 1);
       seq.apply(op1);
       assert.equal(seq.size(), 1);
+    });
+    
+    it("replicas converge when issued many randomized operations from a single replica", () => {
+      let alice = new KSeq<number>("alice");
+      let bob = new KSeq<number>("bob");
+      let ops = [];
+      
+      for (let i = 0; i < 1000; i++) {
+        let pos = Math.floor(Math.random() * i);
+        ops.push(alice.insert(i, pos));
+      }
+      for (let i = 0; i < 500; i++) {
+        let pos = Math.floor(Math.random() * (1000 - i));
+        ops.push(alice.remove(pos));
+      }
+      
+      randomize(ops);
+      
+      for (let i = 0; i < ops.length; i++) {
+        bob.apply(ops[i]);
+      }
+      
+      assert.equal(alice.size(), 500);
+      assert.equal(bob.size(), 500);
+      assert.deepEqual(alice.toArray(), bob.toArray());
+    });
+     
+    it("replicas converge when issued many randomized operations from multiple replicas", () => {
+      let alice = new KSeq<number>("alice");
+      let bob = new KSeq<number>("bob");
+      
+      let aliceOps = [];
+      let bobOps = [];
+      for (let i = 0; i < 1000; i++) {
+        aliceOps.push(alice.insert(i, Math.floor(Math.random() * i)));
+        bobOps.push(bob.insert(i, Math.floor(Math.random() * i)));
+      }
+      for (let i = 0; i < 500; i++) {
+        aliceOps.push(alice.remove(Math.floor(Math.random() * (1000 - i))));
+        bobOps.push(bob.remove(Math.floor(Math.random() * (1000 - i))));
+      }
+      
+      randomize(aliceOps);
+      randomize(bobOps);
+      
+      for (let i = 0; i < aliceOps.length; i++) {
+        bob.apply(aliceOps[i]);
+      }
+      for (let i = 0; i < bobOps.length; i++) {
+        alice.apply(bobOps[i]);
+      }
+      
+      assert.equal(alice.size(), bob.size());
+      assert.deepEqual(alice.toArray(), bob.toArray());
     });
     
   });

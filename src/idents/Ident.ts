@@ -6,14 +6,14 @@ import {Segment} from './Segment';
 export class Ident {
   
   /**
+   * The local logical time of the replica that created the identifier.
+   */
+  time: number
+  
+  /**
    * The ordered set of path segments that make up the identifier.
    */
   private path: Segment[]
-  
-  /**
-   * The local logical time of the replica that created the identifier.
-   */
-  private time: number
   
   /**
    * Creates an instance of Ident.
@@ -32,12 +32,26 @@ export class Ident {
    * @returns The parsed instance of Ident.
    */
   static parse(str: string): Ident {
-    let [time, pathString] = str.split('#');
-    let path = pathString.split('/').map((token) => {
-      let [digit, replica] = token.split('.');
-      return Segment(Number(digit), replica);
-    });
-    return new Ident(Number(time), path);
+    try {
+      let [time, pathstr] = str.split('#');
+      if (time === undefined || time.length == 0) {
+        throw new Error("The ident is missing a timestamp");
+      }
+      if (pathstr === undefined || pathstr.length == 0) {
+        throw new Error("The ident is missing a path");
+      }
+      let prev = undefined;
+      let path = pathstr.split('.').map((token) => {
+        let [digit, replica] = token.split(':', 2);
+        if (!replica) replica = prev;
+        else prev = replica;
+        return Segment(Number(digit), replica);
+      });
+      return new Ident(Number(time), path);
+    }
+    catch (err) {
+      throw new Error(`Error parsing Ident: ${err}`);
+    }
   }
   
   /**
@@ -86,8 +100,17 @@ export class Ident {
    * @returns The string representation.
    */
   toString(): string {
-    let path = this.path.map((seg) => `${seg.digit}.${seg.replica}`).join('/');
-    return `${this.time}#${path}`;
+    let prev = undefined;
+    let path = this.path.map((seg) => {
+      if (seg.replica == prev) {
+        return seg.digit;
+      }
+      else {
+        prev = seg.replica;
+        return `${seg.digit}:${seg.replica}`;
+      }
+    });
+    return `${this.time}#${path.join('.')}`;
   }
   
 }

@@ -29,7 +29,7 @@ export abstract class Op {
   /**
    * The name of the replica on which the operation was performed.
    */
-  name: string
+  replica: string
   
   /**
    * A UNIX epoch timestamp for the wall time at which the operation was performed.
@@ -41,13 +41,14 @@ export abstract class Op {
   /**
    * Creates an instance of Op.
    * @param kind      The kind of operation.
-   * @param name      The name of the replica on which the operation was performed.
+   * @param replica   The name of the replica on which the operation was performed.
    * @param timestamp A UNIX epoch timestamp for the wall time when the operation was performed.
    * @returns An instance of Op.
    */
-  constructor(kind: OpKind, name: string, timestamp: number) {
+  constructor(kind: OpKind, replica: string, timestamp: number) {
     this.kind = kind;
-    this.name = name;
+    this.replica = replica;
+    this.timestamp = timestamp;
   }
   
   /**
@@ -88,14 +89,14 @@ export class InsertOp extends Op {
   
   /**
    * Creates an instance of InsertOp.
-   * @param name      The name of the replica on which the operation was performed.
+   * @param replica   The name of the replica on which the operation was performed.
    * @param timestamp A UNIX epoch timestamp for the wall time when the operation was performed.
    * @param id        The identifier for the value.
    * @param value     The value to insert.
    * @returns An instance of InsertOp.
    */
-  constructor(name: string, timestamp: number, id: Ident, value: any) {
-    super(OpKind.Insert, name, timestamp)
+  constructor(replica: string, timestamp: number, id: Ident, value: any) {
+    super(OpKind.Insert, replica, timestamp)
     this.id = id;
     this.value = value;
   }
@@ -106,15 +107,15 @@ export class InsertOp extends Op {
    * @returns An instance of the encoded InsertOp.
    */
   static parse(str: string): InsertOp {
-    let [timestamp, name, id, value] = str.substr(1).split('|', 4);
-    return new InsertOp(name, Number(timestamp), Ident.parse(str), JSON.parse(value));
+    let [timestamp, replica, id, value] = str.substr(1).split('/', 4);
+    return new InsertOp(replica, Number(timestamp), Ident.parse(str), JSON.parse(value));
   }
   
   /**
    * @inheritdoc
    */
   toString() {
-    return `+${this.timestamp}|${this.name}|${this.id.toString()}|${JSON.stringify(this.value)}`;
+    return `+${this.timestamp}/${this.replica}/${this.id.toString()}/${JSON.stringify(this.value)}`;
   }
   
 }
@@ -131,13 +132,13 @@ export class RemoveOp extends Op {
   
   /**
    * Creates an instance of RemoveOp.
-   * @param name      The name of the replica on which the operation was performed.
+   * @param replica   The name of the replica on which the operation was performed.
    * @param timestamp A UNIX epoch timestamp for the wall time when the operation was performed.
    * @param id        The identifier of the atom to remove.
    * @returns An instance of RemoveOp.
    */
-  constructor(name: string, timestamp: number, id: Ident) {
-    super(OpKind.Remove, name, timestamp)
+  constructor(replica: string, timestamp: number, id: Ident) {
+    super(OpKind.Remove, replica, timestamp)
     this.id = id;
   }
   
@@ -147,15 +148,15 @@ export class RemoveOp extends Op {
    * @returns An instance of the encoded RemoveOp.
    */
   static parse(str: string): RemoveOp {
-    let [timestamp, name, id] = str.substr(1).split('|', 3);
-    return new RemoveOp(name, Number(timestamp), Ident.parse(str));
+    let [timestamp, replica, id] = str.substr(1).split('/', 3);
+    return new RemoveOp(replica, Number(timestamp), Ident.parse(str));
   }
   
   /**
    * @inheritdoc
    */
   toString() {
-    return `-${this.timestamp}|${this.name}|${this.id.toString()}`;
+    return `-${this.timestamp}/${this.replica}/${this.id.toString()}`;
   }
   
 }
